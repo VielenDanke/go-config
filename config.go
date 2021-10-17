@@ -42,6 +42,12 @@ func WithParsingFile(filePath string, fileType FileType) configOption {
 	}
 }
 
+func WithEnvParsing() configOption {
+	return func(cfg interface{}) error {
+		return ParseEnv(cfg)
+	}
+}
+
 // NewConfig initializing cfg struct with various of options
 func NewConfig(cfg interface{}, opts ...configOption) (err error) {
 	for _, v := range opts {
@@ -55,7 +61,7 @@ func NewConfig(cfg interface{}, opts ...configOption) (err error) {
 
 // ParseEnv parse environment. Searchin for tag 'env' in structure. Also if field contains tag default - it's using it as a value for field
 func ParseEnv(cfg interface{}) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 // ParseBytes parse input slice of bytes to cfg interface{} based on fileType (YAML, JSON, XML)
