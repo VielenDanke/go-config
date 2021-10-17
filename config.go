@@ -19,16 +19,38 @@ const (
 	XML
 )
 
-func unmarshallJSON(data []byte, cfg interface{}) error {
-	return json.Unmarshal(data, cfg)
+type configOption func(cfg interface{}) error
+
+// WithParsingBytes initialize option with passing bytes for unmarshalling based on fileType
+func WithParsingBytes(data []byte, fileType FileType) configOption {
+	return func(cfg interface{}) error {
+		return ParseBytes(data, fileType, cfg)
+	}
 }
 
-func unmarshallXML(data []byte, cfg interface{}) error {
-	return xml.Unmarshal(data, cfg)
+// WithParsingReader initialize option with passing io.Reader for unmarshalling based on fileType
+func WithParsingReader(reader io.Reader, fileType FileType) configOption {
+	return func(cfg interface{}) error {
+		return ParseReader(reader, fileType, cfg)
+	}
 }
 
-func unmarshallYAML(data []byte, cfg interface{}) error {
-	return yaml.Unmarshal(data, &cfg)
+// WithParsingFile initialize option path to config file for it's opening and unmarshalling based on fileType
+func WithParsingFile(filePath string, fileType FileType) configOption {
+	return func(cfg interface{}) error {
+		return ParseFile(filePath, fileType, cfg)
+	}
+}
+
+// NewConfig initializing cfg struct with various of options
+func NewConfig(cfg interface{}, opts ...configOption) (err error) {
+	for _, v := range opts {
+		err = v(cfg)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 // ParseEnv parse environment. Searchin for tag 'env' in structure. Also if field contains tag default - it's using it as a value for field
@@ -73,4 +95,16 @@ func ParseFile(filePath string, fileType FileType, cfg interface{}) (err error) 
 	defer CloseResources(f)
 
 	return ParseReader(f, fileType, cfg)
+}
+
+func unmarshallJSON(data []byte, cfg interface{}) error {
+	return json.Unmarshal(data, cfg)
+}
+
+func unmarshallXML(data []byte, cfg interface{}) error {
+	return xml.Unmarshal(data, cfg)
+}
+
+func unmarshallYAML(data []byte, cfg interface{}) error {
+	return yaml.Unmarshal(data, cfg)
 }

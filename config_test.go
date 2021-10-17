@@ -1,7 +1,9 @@
 package config_test
 
 import (
-	"encoding/json"
+	"encoding/xml"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,25 +11,73 @@ import (
 )
 
 type TestConfig struct {
-	First      string           `json:"first" env:"first"`
-	Second     int              `json:"second" env:"second"`
-	InnerThird *InnerTestConfig `json:"inner_third"`
+	XMLName    xml.Name         `xml:"TestConfig"`
+	First      string           `json:"first" env:"first" yaml:"first" xml:"First"`
+	Second     int              `json:"second" env:"second" yaml:"second" xml:"Second"`
+	InnerThird *InnerTestConfig `json:"inner_third" yaml:"innerThird" xml:"InnerTestConfig"`
 }
 
 type InnerTestConfig struct {
-	FirstInner string `json:"first_inner" env:"first_inner"`
+	XMLName    xml.Name `xml:"InnerTestConfig"`
+	FirstInner string   `json:"first_inner" env:"first_inner" yaml:"firstInner" xml:"FirstInner"`
 }
 
-func TestParseBytes_Success(t *testing.T) {
+func TestNewConfigWithFileNOpt_Success(t *testing.T) {
 	// prepare
-	cfg := &TestConfig{
-		First:  "first",
-		Second: 2,
-		InnerThird: &InnerTestConfig{
-			FirstInner: "Inner test field",
-		},
+	cfgForParse := &TestConfig{
+		InnerThird: &InnerTestConfig{},
 	}
-	data, _ := json.Marshal(cfg)
+
+	// make test
+	err := config.NewConfig(cfgForParse, config.WithParsingFile("test.json", config.JSON))
+
+	// assertions
+	assert.Nil(t, err)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestNewConfigWithBytesOpt_Success(t *testing.T) {
+	// prepare
+	cfgForParse := &TestConfig{
+		InnerThird: &InnerTestConfig{},
+	}
+	f, _ := os.Open("test.json")
+	data, _ := io.ReadAll(f)
+
+	// make test
+	err := config.NewConfig(cfgForParse, config.WithParsingBytes(data, config.JSON))
+
+	// assertions
+	assert.Nil(t, err)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestNewConfigWithReaderOpt_Success(t *testing.T) {
+	// prepare
+	cfgForParse := &TestConfig{
+		InnerThird: &InnerTestConfig{},
+	}
+	f, _ := os.Open("test.json")
+
+	// make test
+	err := config.NewConfig(cfgForParse, config.WithParsingReader(f, config.JSON))
+
+	// assertions
+	assert.Nil(t, err)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseBytesJSON_Success(t *testing.T) {
+	// prepare
+	f, _ := os.Open("test.json")
+
+	data, _ := io.ReadAll(f)
 
 	cfgForParse := &TestConfig{
 		InnerThird: &InnerTestConfig{},
@@ -38,7 +88,155 @@ func TestParseBytes_Success(t *testing.T) {
 
 	// assertions
 	assert.Nil(t, resErr)
-	assert.Equal(t, cfgForParse.First, cfg.First)
-	assert.Equal(t, cfg.Second, cfgForParse.Second)
-	assert.Equal(t, cfg.InnerThird.FirstInner, cfgForParse.InnerThird.FirstInner)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseReaderJSON_Success(t *testing.T) {
+	// prepare
+	f, _ := os.Open("test.json")
+
+	cfgForParse := &TestConfig{
+		InnerThird: &InnerTestConfig{},
+	}
+
+	// make test
+	resErr := config.ParseReader(f, config.JSON, cfgForParse)
+
+	// assertions
+	assert.Nil(t, resErr)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseFileJSON_Success(t *testing.T) {
+	// prepare
+	cfgForParse := &TestConfig{
+		InnerThird: &InnerTestConfig{},
+	}
+
+	// make test
+	resErr := config.ParseFile("test.json", config.JSON, cfgForParse)
+
+	// assertions
+	assert.Nil(t, resErr)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseBytesYAML_Success(t *testing.T) {
+	// prepare
+	f, _ := os.Open("test.yaml")
+
+	data, _ := io.ReadAll(f)
+
+	cfgForParse := &TestConfig{
+		InnerThird: &InnerTestConfig{},
+	}
+
+	// make test
+	resErr := config.ParseBytes(data, config.YAML, cfgForParse)
+
+	// assertions
+	assert.Nil(t, resErr)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseReaderYAML_Success(t *testing.T) {
+	// prepare
+	f, _ := os.Open("test.yaml")
+
+	cfgForParse := &TestConfig{
+		InnerThird: &InnerTestConfig{},
+	}
+
+	// make test
+	resErr := config.ParseReader(f, config.YAML, cfgForParse)
+
+	// assertions
+	assert.Nil(t, resErr)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseFileYAML_Success(t *testing.T) {
+	// prepare
+	cfgForParse := &TestConfig{
+		InnerThird: &InnerTestConfig{},
+	}
+
+	// make test
+	resErr := config.ParseFile("test.yaml", config.YAML, cfgForParse)
+
+	// assertions
+	assert.Nil(t, resErr)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseBytesXML_Success(t *testing.T) {
+	// prepare
+	f, _ := os.Open("test.xml")
+
+	data, _ := io.ReadAll(f)
+
+	cfgForParse := &TestConfig{
+		First:      "f",
+		Second:     2,
+		InnerThird: &InnerTestConfig{FirstInner: "asd"},
+	}
+
+	// make test
+	resErr := config.ParseBytes(data, config.XML, cfgForParse)
+
+	// assertions
+	assert.Nil(t, resErr)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseReaderXML_Success(t *testing.T) {
+	// prepare
+	f, _ := os.Open("test.xml")
+
+	cfgForParse := &TestConfig{
+		First:      "f",
+		Second:     2,
+		InnerThird: &InnerTestConfig{FirstInner: "asd"},
+	}
+
+	// make test
+	resErr := config.ParseReader(f, config.XML, cfgForParse)
+
+	// assertions
+	assert.Nil(t, resErr)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
+}
+
+func TestParseFileXML_Success(t *testing.T) {
+	// prepare
+	cfgForParse := &TestConfig{
+		First:      "f",
+		Second:     2,
+		InnerThird: &InnerTestConfig{FirstInner: "asd"},
+	}
+
+	// make test
+	resErr := config.ParseFile("test.xml", config.XML, cfgForParse)
+
+	// assertions
+	assert.Nil(t, resErr)
+	assert.Equal(t, "first", cfgForParse.First)
+	assert.Equal(t, 2, cfgForParse.Second)
+	assert.Equal(t, "first_inner", cfgForParse.InnerThird.FirstInner)
 }

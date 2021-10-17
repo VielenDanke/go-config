@@ -1,0 +1,7 @@
+<TestConfig>
+    <First>first</First>
+    <Second>2</Second>
+    <InnerTestConfig>
+        <FirstInner>first_inner</FirstInner>
+    </InnerTestConfig>
+</TestConfig>
