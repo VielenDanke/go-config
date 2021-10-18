@@ -45,10 +45,7 @@ func TestNewConfigWithFileNOpt_EnvOpt_Success(t *testing.T) {
 	}
 	data := []byte(`
 	{
-		"first":"first",
-		"inner_third": {
-			"first_inner":"first_inner"
-		}
+		"first":"first"
 	}
 	`)
 	os.Setenv("SECOND", "2")
@@ -57,7 +54,7 @@ func TestNewConfigWithFileNOpt_EnvOpt_Success(t *testing.T) {
 	}()
 
 	// make test
-	err := config.NewConfig(cfgForParse, config.WithParsingBytes(data, config.JSON), config.WithParsingEnv())
+	err := config.NewConfig(cfgForParse, config.WithParsingBytes(data, config.JSON), config.WithParsingEnv(), config.WithParsingFile("test.xml", config.XML))
 
 	// assertions
 	assert.Nil(t, err)
