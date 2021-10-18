@@ -7,11 +7,17 @@ import (
 	"errors"
 	"io"
 	"os"
+	"reflect"
+	"strconv"
 
 	"gopkg.in/yaml.v2"
 )
 
 type FileType int
+
+const (
+	envTag = "goenv"
+)
 
 const (
 	JSON FileType = iota
@@ -42,7 +48,7 @@ func WithParsingFile(filePath string, fileType FileType) configOption {
 	}
 }
 
-func WithEnvParsing() configOption {
+func WithParsingEnv() configOption {
 	return func(cfg interface{}) error {
 		return ParseEnv(cfg)
 	}
@@ -59,12 +65,65 @@ func NewConfig(cfg interface{}, opts ...configOption) (err error) {
 	return
 }
 
-// ParseEnv parse environment. Searchin for tag 'env' in structure. Also if field contains tag default - it's using it as a value for field
+/*
+ParseEnv method takes config interface as argument
+runs over the fields of incoming interface, if field contains tag goenv:"value"
+after it is searching for "value" in os Environment
+if find - inject os environment into field, if not - do nothing
+
+Important note: cfg and all inner struct field should be initialized as pointers
+
+Example:
+type Test struct {
+   Inner *InnerTest
+}
+
+type InnerTest struct {
+   Field string `goenv:"field"`
+}
+
+cfg := &Test{Inner: &InnerTest{}}
+*/
 func ParseEnv(cfg interface{}) error {
-	return errors.New("not implemented")
+	if cfg == nil {
+		return nil
+	}
+	v := reflect.ValueOf(cfg)
+	if v.Kind() == reflect.Ptr {
+		el := v.Elem()
+		for i := 0; i < el.NumField(); i++ {
+			if el.Field(i).Kind() == reflect.Ptr {
+				err := ParseEnv(el.Field(i).Interface())
+				if err != nil {
+					return err
+				}
+			} else {
+				t := reflect.TypeOf(cfg).Elem()
+				tagenv := t.Field(i).Tag.Get(envTag)
+				env := os.Getenv(tagenv)
+				if env == "" {
+					continue
+				}
+				switch el.Field(i).Kind() {
+				case reflect.String:
+					el.Field(i).SetString(env)
+				case reflect.Int:
+					num, _ := strconv.Atoi(env)
+					el.Field(i).SetInt(int64(num))
+				case reflect.Bool:
+					b, _ := strconv.ParseBool(env)
+					el.Field(i).SetBool(b)
+				default:
+					return errors.New("not implemented go type")
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // ParseBytes parse input slice of bytes to cfg interface{} based on fileType (YAML, JSON, XML)
+// cfg should be passed as pointer
 func ParseBytes(data []byte, fileType FileType, cfg interface{}) (err error) {
 	switch fileType {
 	case JSON:
@@ -81,6 +140,7 @@ func ParseBytes(data []byte, fileType FileType, cfg interface{}) (err error) {
 
 // ParseReader parse input io.Reader to cfg interface{} based on fileType (YAML, JSON, XML)
 // Underneath using ParseBytes function
+// cfg should be passed as pointer
 func ParseReader(reader io.Reader, fileType FileType, cfg interface{}) (err error) {
 	if data, readErr := io.ReadAll(bufio.NewReader(reader)); readErr == nil {
 		return ParseBytes(data, fileType, cfg)
@@ -91,6 +151,7 @@ func ParseReader(reader io.Reader, fileType FileType, cfg interface{}) (err erro
 
 // ParseFile parse file based on filePath and fileType (YAML, JSON, XML). If file is not exists - returns an error
 // Underneath using ParseReader function
+// cfg should be passed as pointer
 func ParseFile(filePath string, fileType FileType, cfg interface{}) (err error) {
 	f, fErr := os.Open(filePath)
 
