@@ -41,13 +41,14 @@ func WithParsingReader(reader io.Reader, fileType FileType) configOption {
 	}
 }
 
-// WithParsingFile initialize option path to config file for it's opening and unmarshalling based on fileType
+// WithParsingFile initialize option passed to config file for it's opening and unmarshalling based on fileType
 func WithParsingFile(filePath string, fileType FileType) configOption {
 	return func(cfg interface{}) error {
 		return ParseFile(filePath, fileType, cfg)
 	}
 }
 
+// WithParsingEnv initialize option for parsing ENV
 func WithParsingEnv() configOption {
 	return func(cfg interface{}) error {
 		return ParseEnv(cfg)
