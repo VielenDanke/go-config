@@ -50,7 +50,7 @@ func TestNewConfigWithFileNOpt_EnvOpt_Success(t *testing.T) {
 	`)
 	os.Setenv("SECOND", "2")
 	defer func() {
-		os.Remove("SECOND")
+		os.Unsetenv("SECOND")
 	}()
 
 	// make test
@@ -70,9 +70,9 @@ func TestParseEnv_Success(t *testing.T) {
 	os.Setenv("FIRST_INNER", "first_inner")
 
 	defer func() {
-		os.Remove("FIRST")
-		os.Remove("SECOND")
-		os.Remove("FIRST_INNER")
+		os.Unsetenv("FIRST")
+		os.Unsetenv("SECOND")
+		os.Unsetenv("FIRST_INNER")
 	}()
 
 	cfgForParse := &TestConfig{
