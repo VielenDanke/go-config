@@ -15,45 +15,6 @@ import (
 )
 
 /*
-configVaultClient function create default api.Client for Vault
-Important note: address is fetching from Environment using os.Getenv function
-Environment key - VAULT_ADDR
-Returning api.Client, error
-*/
-func configVaultClient() (*api.Client, error) {
-	vaultEnv := os.Getenv("VAULT_ADDR")
-	if vaultEnv == "" {
-		return nil, errors.New("VAULT_ADDR Environment variable is required")
-	}
-	cfg := &api.Config{
-		Address: vaultEnv,
-		HttpClient: &http.Client{
-			Transport: &http.Transport{
-				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-				}).DialContext,
-				MaxIdleConns:          100,
-				IdleConnTimeout:       90 * time.Second,
-				TLSHandshakeTimeout:   10 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-				TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
-			},
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		},
-		MinRetryWait: time.Millisecond * 1000,
-		MaxRetryWait: time.Millisecond * 1500,
-		MaxRetries:   2,
-		Timeout:      time.Second * 60,
-		Backoff:      retryablehttp.LinearJitterBackoff,
-		CheckRetry:   retryablehttp.DefaultRetryPolicy,
-	}
-	return api.NewClient(cfg)
-}
-
-/*
 fetchVaultConfig receives api.Client - creating by configVaultClient function
 path - to Vault secret directory (pattern for Vault v2 - /secret/data/{secret_name})
 token - for accessing Vault
@@ -127,6 +88,45 @@ func FetchBytesVaultSecretDataEnv() ([]byte, error) {
 		return nil, err
 	}
 	return FetchBytesVaultSecretData(path, token)
+}
+
+/*
+configVaultClient function create default api.Client for Vault
+Important note: address is fetching from Environment using os.Getenv function
+Environment key - VAULT_ADDR
+Returning api.Client, error
+*/
+func configVaultClient() (*api.Client, error) {
+	vaultEnv := os.Getenv("VAULT_ADDR")
+	if vaultEnv == "" {
+		return nil, errors.New("VAULT_ADDR Environment variable is required")
+	}
+	cfg := &api.Config{
+		Address: vaultEnv,
+		HttpClient: &http.Client{
+			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+				MaxIdleConns:          100,
+				IdleConnTimeout:       90 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+			},
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
+		MinRetryWait: time.Millisecond * 1000,
+		MaxRetryWait: time.Millisecond * 1500,
+		MaxRetries:   2,
+		Timeout:      time.Second * 60,
+		Backoff:      retryablehttp.LinearJitterBackoff,
+		CheckRetry:   retryablehttp.DefaultRetryPolicy,
+	}
+	return api.NewClient(cfg)
 }
 
 func fetchVaultEnv() (path, token string, err error) {
