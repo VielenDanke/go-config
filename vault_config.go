@@ -15,14 +15,15 @@ import (
 )
 
 /*
-fetchVaultConfig receives api.Client - creating by configVaultClient function
-path - to Vault secret directory (pattern for Vault v2 - /secret/data/{secret_name})
-token - for accessing Vault
-If fetched api.Secret is nil - return error
-if read from Vault failed - return error
+FetchVaultSecret process fetching secret using incoming arguments (path, token)
+configVaultClient function is using inside
 Returning: map[string]interface{}, error
 */
-func fetchVaultConfig(cli *api.Client, path, token string) (*api.Secret, error) {
+func FetchVaultSecret(path, token string) (*api.Secret, error) {
+	cli, configErr := configVaultClient()
+	if configErr != nil {
+		return nil, configErr
+	}
 	cli.SetToken(token)
 	data, dataErr := cli.Logical().Read(path)
 	if dataErr != nil {
@@ -32,19 +33,6 @@ func fetchVaultConfig(cli *api.Client, path, token string) (*api.Secret, error) 
 		return nil, fmt.Errorf("path %s not found", path)
 	}
 	return data, nil
-}
-
-/*
-FetchVaultSecret process fetching secret using incoming arguments (path, token)
-configVaultClient and fetchVaultConfig functions are using inside
-Returning: map[string]interface{}, error
-*/
-func FetchVaultSecret(path, token string) (*api.Secret, error) {
-	cli, configErr := configVaultClient()
-	if configErr != nil {
-		return nil, configErr
-	}
-	return fetchVaultConfig(cli, path, token)
 }
 
 /*
