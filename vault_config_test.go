@@ -138,3 +138,120 @@ func TestFetchVaultSecretEnv_VaultTokenIsEmpty(t *testing.T) {
 	assert.Nil(t, secret)
 	assert.Nil(t, setEnvErr)
 }
+
+func TestFetchBytesVaultSecretData(t *testing.T) {
+	// prepare
+	envErr := os.Setenv(vaultAddr, testHost)
+
+	// make test
+	data, err := FetchBytesVaultSecretData(testPath, testToken)
+
+	// clean
+	envErr = os.Unsetenv(vaultAddr)
+
+	// assertions
+	assert.Nil(t, err)
+	assert.NotNil(t, data)
+	assert.Nil(t, envErr)
+}
+
+func TestFetchBytesVaultSecretData_VaultAddrEnvIsEmpty(t *testing.T) {
+	// make test
+	data, err := FetchBytesVaultSecretData(testPath, testToken)
+
+	// assertions
+	assert.NotNil(t, err)
+	assert.Nil(t, data)
+}
+
+func TestFetchBytesVaultSecretData_PathIsEmpty(t *testing.T) {
+	// make test
+	data, err := FetchBytesVaultSecretData("", testToken)
+
+	// assertions
+	assert.NotNil(t, err)
+	assert.Nil(t, data)
+}
+
+func TestFetchBytesVaultSecretData_TokenIsEmpty(t *testing.T) {
+	// make test
+	data, err := FetchBytesVaultSecretData(testPath, "")
+
+	// assertions
+	assert.NotNil(t, err)
+	assert.Nil(t, data)
+}
+
+func TestFetchBytesVaultSecretDataEnv(t *testing.T) {
+	// prepare
+	setEnvErr := os.Setenv(vaultAddr, testHost)
+	setEnvErr = os.Setenv(vaultToken, testToken)
+	setEnvErr = os.Setenv(vaultSecretPath, testPath)
+
+	// make test
+	secret, fetchErr := FetchBytesVaultSecretDataEnv()
+
+	// clean
+	setEnvErr = os.Unsetenv(vaultAddr)
+	setEnvErr = os.Unsetenv(vaultToken)
+	setEnvErr = os.Unsetenv(vaultSecretPath)
+
+	// assertions
+	assert.Nil(t, setEnvErr)
+	assert.Nil(t, fetchErr)
+	assert.NotNil(t, secret)
+}
+
+func TestFetchBytesVaultSecretDataEnv_VaultAddrEnvIsEmpty(t *testing.T) {
+	// prepare
+	setEnvErr := os.Setenv(vaultToken, testToken)
+	setEnvErr = os.Setenv(vaultSecretPath, testPath)
+
+	// make test
+	secret, fetchErr := FetchBytesVaultSecretDataEnv()
+
+	// clean
+	setEnvErr = os.Unsetenv(vaultToken)
+	setEnvErr = os.Unsetenv(vaultSecretPath)
+
+	// assertions
+	assert.Nil(t, setEnvErr)
+	assert.NotNil(t, fetchErr)
+	assert.Nil(t, secret)
+}
+
+func TestFetchBytesVaultSecretDataEnv_VaultTokenEnvIsEmpty(t *testing.T) {
+	// prepare
+	setEnvErr := os.Setenv(vaultAddr, testHost)
+	setEnvErr = os.Setenv(vaultSecretPath, testPath)
+
+	// make test
+	secret, fetchErr := FetchBytesVaultSecretDataEnv()
+
+	// clean
+	setEnvErr = os.Unsetenv(vaultAddr)
+	setEnvErr = os.Unsetenv(vaultSecretPath)
+
+	// assertions
+	assert.Nil(t, setEnvErr)
+	assert.NotNil(t, fetchErr)
+	assert.Nil(t, secret)
+}
+
+func TestFetchBytesVaultSecretDataEnv_VaultSecretPathEnvIsEmpty(t *testing.T) {
+	// prepare
+	setEnvErr := os.Setenv(vaultAddr, testHost)
+	setEnvErr = os.Setenv(vaultToken, testToken)
+
+	// make test
+	secret, fetchErr := FetchBytesVaultSecretDataEnv()
+
+	// clean
+	setEnvErr = os.Unsetenv(vaultAddr)
+	setEnvErr = os.Unsetenv(vaultToken)
+
+	// assertions
+	assert.Nil(t, setEnvErr)
+	assert.NotNil(t, fetchErr)
+	assert.Nil(t, secret)
+}
